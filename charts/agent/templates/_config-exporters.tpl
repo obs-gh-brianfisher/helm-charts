@@ -2,7 +2,7 @@
 otlphttp/observe/base:
     # These environment variables are provided by the observe-agent:
     # https://github.com/observeinc/observe-agent/blob/v2.0.1/internal/connections/confighandler.go#L91-L102
-    endpoint: "${env:OBSERVE_OTEL_ENDPOINT}"
+    endpoint: "${env:OBSERVE_COLLECTOR_URL}:4318"
     headers:
         authorization: "${env:OBSERVE_AUTHORIZATION_HEADER}"
         x-observe-target-package: "Kubernetes Explorer"
@@ -20,7 +20,7 @@ otlphttp/observe/base:
 otlphttp/observe/entity:
     # These environment variables are provided by the observe-agent:
     # https://github.com/observeinc/observe-agent/blob/v2.0.1/internal/connections/confighandler.go#L91-L102
-    logs_endpoint: "${env:OBSERVE_COLLECTOR_URL}/v1/kubernetes/v1/entity"
+    logs_endpoint: "${env:OBSERVE_COLLECTOR_URL}:4319/v1/logs"
     headers:
       authorization: "${env:OBSERVE_AUTHORIZATION_HEADER}"
       x-observe-target-package: "Kubernetes Explorer"
@@ -38,7 +38,7 @@ otlphttp/observe/entity:
 otlphttp/observe/forward/trace:
     # These environment variables are provided by the observe-agent:
     # https://github.com/observeinc/observe-agent/blob/v2.0.1/internal/connections/confighandler.go#L91-L102
-    endpoint: "${env:OBSERVE_OTEL_ENDPOINT}"
+    endpoint: "${env:OBSERVE_COLLECTOR_URL}:4318"
     headers:
         authorization: "Bearer ${env:TRACE_TOKEN}"
         x-observe-target-package: "Tracing"
@@ -56,7 +56,7 @@ otlphttp/observe/forward/trace:
 otlphttp/observe/otel_metrics:
     # These environment variables are provided by the observe-agent:
     # https://github.com/observeinc/observe-agent/blob/v2.0.1/internal/connections/confighandler.go#L91-L102
-    endpoint: "${env:OBSERVE_OTEL_ENDPOINT}"
+    endpoint: "${env:OBSERVE_COLLECTOR_URL}:4318"
     headers:
         authorization: "${env:OBSERVE_AUTHORIZATION_HEADER}"
         x-observe-target-package: "Metrics"
@@ -71,20 +71,21 @@ otlphttp/observe/otel_metrics:
 {{- end -}}
 
 {{- define "config.exporters.prometheusremotewrite" -}}
-prometheusremotewrite/observe:
+otlphttp/prommetrics:
     # These environment variables are provided by the observe-agent:
     # https://github.com/observeinc/observe-agent/blob/v2.0.1/internal/connections/confighandler.go#L91-L102
-    endpoint: "${env:OBSERVE_PROMETHEUS_ENDPOINT}"
+    endpoint: "${env:OBSERVE_COLLECTOR_URL}:4320"
     headers:
         authorization: "${env:OBSERVE_AUTHORIZATION_HEADER}"
         x-observe-target-package: "Kubernetes Explorer"
-    remote_write_queue:
-      num_consumers: 5
-    max_batch_request_parallelism: 5
-    resource_to_telemetry_conversion:
-        enabled: true # Convert resource attributes to metric labels
-    send_metadata: true
-    timeout: 10s
+    sending_queue:
+      enabled: true
+    retry_on_failure:
+      enabled: true
+      initial_interval: 1s
+      max_interval: 30s
+      max_elapsed_time: 5m
+    compression: zstd
 {{- end -}}
 
 {{- define "config.exporters.debug" -}}
@@ -92,4 +93,8 @@ debug/override:
     verbosity: {{ .Values.agent.config.global.debug.verbosity }}
     sampling_initial: 2
     sampling_thereafter: 1
+{{- end -}}
+
+{{- define "config.exporters.nop" -}}
+nop:
 {{- end -}}
