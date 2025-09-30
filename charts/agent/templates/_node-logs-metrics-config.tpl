@@ -190,8 +190,8 @@ processors:
 
 # Create intermediate lists for pipeline arrays to then modify based on values.yaml
 {{- $logsExporters := (list "otlphttp/observe/base") -}}
-{{- $hostmetricsExporters := (list "prometheusremotewrite/observe") -}}
-{{- $kubeletstatsExporters := (list "prometheusremotewrite/observe") -}}
+{{- $hostmetricsExporters := (list "otlphttp/prommetrics") -}}
+{{- $kubeletstatsExporters := (list "otlphttp/prommetrics") -}}
 
 {{- if eq .Values.agent.config.global.debug.enabled true }}
   {{- $logsExporters = concat $logsExporters ( list "debug/override" ) | uniq }}
